@@ -15,13 +15,16 @@ use Mont4\PaymentGateway\Gateways\IrPay;
 class PaymentGateway
 {
 	const IR_PAY = 'ir_pay';
+	const IR_SEP = 'ir_sep';
 
 	const GATEWAYS = [
 		self::IR_PAY,
+		self::IR_SEP,
 	];
 
 	const GATEWAY_CLASSES = [
 		self::IR_PAY => IrPay::class,
+		self::IR_SEP => IrSep::class,
 	];
 
 	private $gateway = NULL;
