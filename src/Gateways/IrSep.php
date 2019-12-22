@@ -35,71 +35,63 @@ class IrSep implements GatewayInterface
         $this->redirect   = config('payment_gateway.gateways.ir_sep.redirect');
     }
 
+    class ir_sep implements GatewayInterface
+{
+    private $apiKey;
+    private $sendUrl;
+    private $gatewayUrl;
+    private $verifyUrl;
+    private $password;
+
+    function __construct()
+    {
+        $this->apiKey     = env('SEP_IR_api_key');
+        $this->sendUrl    = env('SEP_IR_send_url');
+        $this->gatewayUrl = env('SEP_IR_gateway_url');
+        $this->verifyUrl  = env('SEP_IR_verify_url');
+        $this->password   = env('SEP_IR_password');
+        $this->redirect   = env('SEP_IR_redirect');
+    }
+
+    public function setApiToken($token)
+    {
+        $this->apiKey = $token;
+
+        return $this;
+    }
+
     public function request(int $amount, string $mobile = NULL, string $factorNumber = NULL, string $description = NULL)
     {
         if ($amount < 1000)
             throw new \Exception('amount is lower than 1000');
 
-        try {
-            $body = [
-                '‫‪TerminalId‬‬'      => $this->apiKey,
-                'ResNum'      => $factorNumber,
-                'Amount' => $amount,
-            ];
-
-            $soapClient = new \SoapClient($this->requestUrl);
-            $token      = $soapClient->__call("RequestToken", $body);
-            return [
-                'status' => false,
-                'token' => $token
-            ];
-            if ($token) {
-                return [
-                    'status'         => true,
-                    'method'         => 'post',
-                    'gateway_url'    => $this->gatewayUrl,
-                    'transaction_id' => $token,
-                    'redirect_url'   => '',
-                ];
-            }
-        } catch (\Exception $ex) {
-            \Log::error($ex);
-           
-
-
-        }
-
-
-       return [
-           'status' => false,
-            'token' => $token
-        ];
-
-    }
-
-    public function verify($token)
-    {
-        try {
-            $body = [
-                $token,
-                $this->apiKey,
-            ];
-
-            $soapClient = new \SoapClient($this->verifyUrl);
-            $value      = $soapClient->__call("verifyTransaction", $body);
-
-            if ($value < 0) {
-                return false;
-            }
-
-            return true;
-        } catch (\Exception $ex) {
-            \Log::error($ex);
-        }
+        $token = "sep_" . Str::random();
 
         return [
-            'status' => false,
+            'method'         => 'post',
+            'amount'         => $amount,
+            'mid'            => $this->apiKey,
+            'gateway_url'    => $this->gatewayUrl,
+            'transaction_id' => $token,
+            'redirect_url'   => $this->redirect,
+        ];
+    }
+
+    public function verify($transactionId)
+    {
+        $data = [
+            "merchantID" => $this->apiKey,
+            "RefNum"     => $transactionId,
+            "password"   => $this->password,
         ];
 
+        $soapClient = new \SoapClient("https://sep.shaparak.ir/payments/referencepayment.asmx?wsdl");
+        $value      = $soapClient->__call("verifyTransaction", $data);
+
+        if ($value < 0) {
+            return false;
+        }
+
+        return true;
     }
 }
