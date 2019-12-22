@@ -9,7 +9,6 @@
 namespace Mont4\PaymentGateway\Gateways;
 
 use Illuminate\Support\Str;
-use Mont4\PaymentGateway\PaymentGateway;
 
 class IrSep implements GatewayInterface
 {
@@ -61,8 +60,9 @@ class IrSep implements GatewayInterface
     {
         try {
             $body = [
-                $token,
-                $this->apiKey,
+                "merchantID" => $this->apiKey,
+                "RefNum"     => $token,
+                "password"   => $this->password,
             ];
 
             $soapClient = new \SoapClient("https://sep.shaparak.ir/payments/referencepayment.asmx?wsdl");
