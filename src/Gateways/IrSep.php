@@ -8,6 +8,7 @@
 
 namespace Mont4\PaymentGateway\Gateways;
 
+use Illuminate\Support\Str;
 use Mont4\PaymentGateway\PaymentGateway;
 
 class IrSep implements GatewayInterface
