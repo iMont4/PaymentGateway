@@ -25,6 +25,7 @@ class IrSep implements GatewayInterface
     private $gatewayUrl;
     private $verifyUrl;
     private $redirect;
+    private $password;
 
     public function __construct()
     {
@@ -33,6 +34,7 @@ class IrSep implements GatewayInterface
         $this->gatewayUrl = config('payment_gateway.gateways.ir_sep.gateway_url');
         $this->verifyUrl  = config('payment_gateway.gateways.ir_sep.verify_url');
         $this->redirect   = config('payment_gateway.gateways.ir_sep.redirect');
+        $this->password   = config('payment_gateway.gateways.ir_sep.password');
     }
 
     public function request(int $amount, string $mobile = NULL, string $factorNumber = NULL, string $description = NULL)
@@ -40,34 +42,18 @@ class IrSep implements GatewayInterface
         if ($amount < 1000)
             throw new \Exception('amount is lower than 1000');
 
-        try {
-            $body = [
-                'TermID'      => $this->apiKey,
-                'ResNum'      => $factorNumber,
-                'TotalAmount' => $amount,
-            ];
-
-            $soapClient = new \SoapClient($this->sendUrl);
-            $token      = $soapClient->__call("RequestToken", $data);
-
-            if ($token) {
-                return [
-                    'status'         => true,
-                    'method'         => 'post',
-                    'gateway_url'    => $this->gatewayUrl,
-                    'transaction_id' => $token,
-                    'redirect_url'   => $redirect,
-                ];
-            }
-        } catch (\Exception $ex) {
-            \Log::error($ex);
-        }
-
+        if (!$factorNumber)
+            $factorNumber = "sep_" . Str::random();
 
         return [
-            'status' => false,
+            'method'         => 'post',
+            'amount'         => $amount,
+            'mobile'         => $mobile,
+            'mid'            => $this->apiKey,
+            'gateway_url'    => $this->gatewayUrl,
+            'transaction_id' => $factorNumber,
+            'redirect_url'   => $this->redirect,
         ];
-
     }
 
     public function verify($token)
