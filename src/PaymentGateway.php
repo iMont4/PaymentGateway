@@ -3,6 +3,7 @@
 namespace Mont4\PaymentGateway;
 
 use Mont4\PaymentGateway\Gateways\IrPay;
+use Mont4\PaymentGateway\Gateways\IrSep;
 
 /**
  * Class PaymentGateway
