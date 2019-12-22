@@ -42,30 +42,37 @@ class IrSep implements GatewayInterface
 
         try {
             $body = [
-                'TermID'      => $this->apiKey,
+                '‫‪TerminalId‬‬'      => $this->apiKey,
                 'ResNum'      => $factorNumber,
-                'TotalAmount' => $amount,
+                'Amount' => $amount,
             ];
 
-            $soapClient = new \SoapClient($this->sendUrl);
-            $token      = $soapClient->__call("RequestToken", $data);
-
+            $soapClient = new \SoapClient($this->requestUrl);
+            $token      = $soapClient->__call("RequestToken", $body);
+            return [
+                'status' => false,
+                'token' => $token
+            ];
             if ($token) {
                 return [
                     'status'         => true,
                     'method'         => 'post',
                     'gateway_url'    => $this->gatewayUrl,
                     'transaction_id' => $token,
-                    'redirect_url'   => $redirect,
+                    'redirect_url'   => '',
                 ];
             }
         } catch (\Exception $ex) {
             \Log::error($ex);
+           
+
+
         }
 
 
-        return [
-            'status' => false,
+       return [
+           'status' => false,
+            'token' => $token
         ];
 
     }
@@ -78,7 +85,7 @@ class IrSep implements GatewayInterface
                 $this->apiKey,
             ];
 
-            $soapClient = new \SoapClient("https://sep.shaparak.ir/payments/referencepayment.asmx?wsdl");
+            $soapClient = new \SoapClient($this->verifyUrl);
             $value      = $soapClient->__call("verifyTransaction", $body);
 
             if ($value < 0) {
