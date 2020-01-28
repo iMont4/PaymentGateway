@@ -11,7 +11,8 @@ class IrSep implements GatewayInterface
         -111 => "ساختار صحیح نمی‌باشد.",
         -18  => "IP شما برای این ترمینال ثبت نشده است.",
         -6   => "زمان تایید درخواست به پایان رسیده است.",
-        -1   => "کدفروشندع یا RefNum صحیح نمی‌باشد.",
+        -1   => "کدفروشنده یا RefNum صحیح نمی‌باشد.",
+        -20  => "مبلغ دریافتی از بانک با سند تراکنش تطابق ندارد. پول به حساب شما برمی‌گردد.",
     ];
 
     private $apiKey;
@@ -41,6 +42,7 @@ class IrSep implements GatewayInterface
             'success'     => true,
             'method'      => 'post',
             'gateway_url' => $this->gatewayUrl,
+            'token'       => $factorNumber,
             'data'        => [
                 'amount'         => $amount,
                 'mobile'         => $mobile,
@@ -51,11 +53,11 @@ class IrSep implements GatewayInterface
         ];
     }
 
-    public function verify($token)
+    public function verify($RefNum, $amount)
     {
         try {
             $soapClient = new SoapClient($this->verifyUrl);
-            $response   = $soapClient->verifyTransaction($token, $this->apiKey);
+            $response   = $soapClient->verifyTransaction($RefNum, $this->apiKey);
 
             if ($response < 0) {
                 return [
@@ -64,7 +66,19 @@ class IrSep implements GatewayInterface
                 ];
             }
 
-            return $response;
+            if ($response != $amount) {
+                // Reverse Money
+                $this->reverse($RefNum);
+
+                return [
+                    'success' => false,
+                    'message' => self::VERIFY_STATUS[-20] ?? NULL,
+                ];
+            }
+
+            return [
+                'success' => true,
+            ];
         } catch (\Exception $ex) {
             \Log::error($ex);
         }
@@ -72,6 +86,30 @@ class IrSep implements GatewayInterface
         return [
             'success' => false,
         ];
+    }
 
+    public function reverse($RefNum)
+    {
+        try {
+            $soapClient = new SoapClient($this->verifyUrl);
+            $response   = $soapClient->reverseTransaction($RefNum, $this->apiKey, $this->apiKey, $this->password);
+
+            if ($response < 0) {
+                return [
+                    'success' => false,
+                    'message' => self::VERIFY_STATUS[$response] ?? NULL,
+                ];
+            }
+
+            return [
+                'success' => true,
+            ];
+        } catch (\Exception $ex) {
+            \Log::error($ex);
+        }
+
+        return [
+            'success' => false,
+        ];
     }
 }
