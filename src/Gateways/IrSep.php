@@ -3,6 +3,7 @@
 namespace Mont4\PaymentGateway\Gateways;
 
 use Illuminate\Support\Str;
+use SoapClient;
 
 class IrSep implements GatewayInterface
 {
@@ -53,13 +54,13 @@ class IrSep implements GatewayInterface
     public function verify($token)
     {
         try {
-            $soapClient = new soapclient($Verify_URL);
+            $soapClient = new SoapClient($this->verifyUrl);
             $response   = $soapClient->verifyTransaction($token, $this->apiKey);
 
             if ($response < 0) {
                 return [
                     'success' => false,
-                    'message' => VERIFY_STATUS[$response] ?? NULL,
+                    'message' => self::VERIFY_STATUS[$response] ?? NULL,
                 ];
             }
 
