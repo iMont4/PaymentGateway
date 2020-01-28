@@ -1,68 +1,115 @@
 <?php
 
-namespace Mont4\PaymentGateway;
+namespace Mont4\PaymentGateway\Gateways;
 
-use Mont4\PaymentGateway\Gateways\IrPay;
-use Mont4\PaymentGateway\Gateways\IrSep;
+use Illuminate\Support\Str;
+use SoapClient;
 
-/**
- * Class PaymentGateway
- *
- * @package Mont4\PaymentGateway
- *
- * @method request(int $amount, string $mobile = NULL, string $factorNumber = NULL, string $description = NULL) 
- * @method verify($token, $amount = NULL)
- * @method reverse($token)
- */
-class PaymentGateway
+class IrSep implements GatewayInterface
 {
-	const IR_PAY = 'ir_pay';
-	const IR_SEP = 'ir_sep';
+    const VERIFY_STATUS = [
+        -111 => "ساختار صحیح نمی‌باشد.",
+        -18  => "IP شما برای این ترمینال ثبت نشده است.",
+        -6   => "زمان تایید درخواست به پایان رسیده است.",
+        -1   => "کدفروشنده یا RefNum صحیح نمی‌باشد.",
+        -20  => "مبلغ دریافتی از بانک با سند تراکنش تطابق ندارد. پول به حساب شما برمی‌گردد.",
+    ];
 
-	const GATEWAYS = [
-		self::IR_PAY,
-		self::IR_SEP,
-	];
+    private $apiKey;
+    private $gatewayUrl;
+    private $verifyUrl;
+    private $redirect;
+    private $password;
 
-	const GATEWAY_CLASSES = [
-		self::IR_PAY => IrPay::class,
-		self::IR_SEP => IrSep::class,
-	];
+    public function __construct()
+    {
+        $this->apiKey     = config('payment_gateway.gateways.ir_sep.api_key');
+        $this->password   = config('payment_gateway.gateways.ir_sep.password');
+        $this->gatewayUrl = config('payment_gateway.gateways.ir_sep.gateway_url');
+        $this->verifyUrl  = config('payment_gateway.gateways.ir_sep.verify_url');
+        $this->redirect   = config('payment_gateway.gateways.ir_sep.redirect');
+    }
 
-	private $gateway = NULL;
-	private $sender;
+    public function request(int $amount, string $mobile = NULL, string $factorNumber = NULL, string $description = NULL)
+    {
+        if ($amount < 1000)
+            throw new \Exception('amount is lower than 1000');
 
-	/**
-	 * SmsService constructor.
-	 */
-	private function __construct($gateway)
-	{
-		$this->gateway = $gateway;
-	}
+        if (!$factorNumber)
+            $factorNumber = "sep_" . Str::random(40);
 
-	static public function gateway($gateway)
-	{
-		return new self($gateway);
-	}
+        return [
+            'success'     => true,
+            'method'      => 'post',
+            'gateway_url' => $this->gatewayUrl,
+            'token'       => $factorNumber,
+            'data'        => [
+                'amount'         => $amount,
+                'mobile'         => $mobile,
+                'mid'            => $this->apiKey,
+                'transaction_id' => $factorNumber,
+                'redirect_url'   => $this->redirect,
+            ],
+        ];
+    }
 
-	public function __call($name, $arguments)
-	{
-		if (!in_array($this->gateway, self::GATEWAYS)) {
-			throw new \Exception('Gateway is not exists.');
-		}
+    public function verify($RefNum, ?int $amount = NULL)
+    {
+        try {
+            $soapClient = new SoapClient($this->verifyUrl);
+            $response   = $soapClient->verifyTransaction($RefNum, $this->apiKey);
 
-		// class from gateway name
-		$gateway = new \ReflectionClass(self::GATEWAY_CLASSES[$this->gateway]);
+            if ($response < 0) {
+                return [
+                    'success' => false,
+                    'message' => self::VERIFY_STATUS[$response] ?? NULL,
+                ];
+            }
 
-		// construct class of gateway
-		$gateway = $gateway->newInstanceArgs();
+            if ($response != $amount) {
+                // Reverse Money
+                $this->reverse($RefNum);
 
-		// check called method exist
-		if (!method_exists($gateway, $name)) {
-			throw new \Exception('Method is not exists.');
-		}
+                return [
+                    'success' => false,
+                    'message' => self::VERIFY_STATUS[-20] ?? NULL,
+                ];
+            }
 
-		// call method of gateway
-		return $gateway->{$name}(...$arguments);
-	}
+            return [
+                'success' => true,
+            ];
+        } catch (\Exception $ex) {
+            \Log::error($ex);
+        }
+
+        return [
+            'success' => false,
+        ];
+    }
+
+    public function reverse($RefNum)
+    {
+        try {
+            $soapClient = new SoapClient($this->verifyUrl);
+            $response   = $soapClient->reverseTransaction($RefNum, $this->apiKey, $this->apiKey, $this->password);
+
+            if ($response < 0) {
+                return [
+                    'success' => false,
+                    'message' => self::VERIFY_STATUS[$response] ?? NULL,
+                ];
+            }
+
+            return [
+                'success' => true,
+            ];
+        } catch (\Exception $ex) {
+            \Log::error($ex);
+        }
+
+        return [
+            'success' => false,
+        ];
+    }
 }
