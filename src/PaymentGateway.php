@@ -10,8 +10,9 @@ use Mont4\PaymentGateway\Gateways\IrSep;
  *
  * @package Mont4\PaymentGateway
  *
- * @method request(int $amount, string $mobile = NULL, string $factorNumber = NULL, string $description = NULL)
- * @method verify($token)
+ * @method request(int $amount, string $mobile = NULL, string $factorNumber = NULL, string $description = NULL) 
+ * @method verify($token, $amount = NULL)
+ * @method reverse($token)
  */
 class PaymentGateway
 {
