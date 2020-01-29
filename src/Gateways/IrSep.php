@@ -44,16 +44,16 @@ class IrSep implements GatewayInterface
             'gateway_url' => $this->gatewayUrl,
             'token'       => $factorNumber,
             'data'        => [
-                'amount'         => $amount,
-                'mobile'         => $mobile,
-                'mid'            => $this->apiKey,
-                'transaction_id' => $factorNumber,
-                'redirect_url'   => $this->redirect,
+                'Amount'      => $amount,
+                'Mobile'      => $mobile,
+                'MID'         => $this->apiKey,
+                'ResNum'      => $factorNumber,
+                'RedirectURL' => $this->redirect,
             ],
         ];
     }
 
-    public function verify($RefNum, ?int $amount = null)
+    public function verify($RefNum, ?int $amount = NULL)
     {
         try {
             $soapClient = new SoapClient($this->verifyUrl);
