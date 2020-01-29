@@ -53,7 +53,7 @@ class IrSep implements GatewayInterface
         ];
     }
 
-    public function verify($RefNum, $amount)
+    public function verify($RefNum, ?int $amount = null)
     {
         try {
             $soapClient = new SoapClient($this->verifyUrl);
