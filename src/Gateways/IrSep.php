@@ -68,7 +68,7 @@ class IrSep implements GatewayInterface
 
             if ($response != $amount) {
                 // Reverse Money
-                $this->reverse($RefNum);
+                $this->reverse($RefNum, $response);
 
                 return [
                     'success' => false,
@@ -88,11 +88,11 @@ class IrSep implements GatewayInterface
         ];
     }
 
-    public function reverse($RefNum)
+    public function reverse($RefNum, $amount)
     {
         try {
             $soapClient = new SoapClient($this->verifyUrl);
-            $response   = $soapClient->reverseTransaction($RefNum, $this->apiKey, $this->apiKey, $this->password);
+            $response   = $soapClient->reverseTransaction($RefNum, $this->apiKey, $this->password, $amount);
 
             if ($response < 0) {
                 return [
