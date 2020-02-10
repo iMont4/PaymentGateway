@@ -45,7 +45,7 @@ class IrSep implements GatewayInterface
             'token'       => $factorNumber,
             'data'        => [
                 'Amount'      => $amount,
-                'Mobile'      => $mobile,
+                'CellNumber'  => $mobile,
                 'MID'         => $this->apiKey,
                 'ResNum'      => $factorNumber,
                 'RedirectURL' => $this->redirect,
