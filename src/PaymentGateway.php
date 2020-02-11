@@ -53,7 +53,7 @@ class PaymentGateway
 
 	public function __call($name, $arguments)
 	{
-		if (!in_array($this->gateway, self::GATEWAYS)) {
+		if (!in_array($this->config['gateway'], self::GATEWAYS)) {
 			throw new \Exception('Gateway is not exists.');
 		}
 
