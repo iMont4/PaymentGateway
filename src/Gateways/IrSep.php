@@ -21,13 +21,13 @@ class IrSep implements GatewayInterface
     private $redirect;
     private $password;
 
-    public function __construct()
+    public function __construct($config)
     {
-        $this->apiKey     = config('payment_gateway.gateways.ir_sep.api_key');
-        $this->password   = config('payment_gateway.gateways.ir_sep.password');
-        $this->gatewayUrl = config('payment_gateway.gateways.ir_sep.gateway_url');
-        $this->verifyUrl  = config('payment_gateway.gateways.ir_sep.verify_url');
-        $this->redirect   = config('payment_gateway.gateways.ir_sep.redirect');
+        $this->apiKey     = $config['api_key'];
+        $this->password   = $config['password'];
+        $this->gatewayUrl = $config['gateway_url'];
+        $this->verifyUrl  = $config['verify_url'];
+        $this->redirect   = $config['redirect'];
     }
 
     public function request(int $amount, string $mobile = NULL, string $factorNumber = NULL, string $description = NULL)
