@@ -30,6 +30,7 @@ class PaymentGateway
 	];
 
 	private $gateway = NULL;
+	private $config = [];
 	private $sender;
 
 	/**
@@ -38,6 +39,11 @@ class PaymentGateway
 	private function __construct($gateway)
 	{
 		$this->gateway = $gateway;
+
+		$this->config = config("payment_gateway.gateways.{$gateway}");
+		if(!$this->config){
+		    throw new \Exception("Gateway config is not exists.");
+        }
 	}
 
 	static public function gateway($gateway)
@@ -52,10 +58,10 @@ class PaymentGateway
 		}
 
 		// class from gateway name
-		$gateway = new \ReflectionClass(self::GATEWAY_CLASSES[$this->gateway]);
+		$gateway = new \ReflectionClass(self::GATEWAY_CLASSES[$this->config['gateway']]);
 
 		// construct class of gateway
-		$gateway = $gateway->newInstanceArgs();
+		$gateway = $gateway->newInstanceArgs([$this->config]);
 
 		// check called method exist
 		if (!method_exists($gateway, $name)) {
